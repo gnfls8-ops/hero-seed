@@ -7,3 +7,4 @@ hero-seed.bundle
 node_modules/
 playwright-report/
 test-results/
+__pycache__/
