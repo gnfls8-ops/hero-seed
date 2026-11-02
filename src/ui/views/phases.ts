@@ -369,7 +369,7 @@ function finaleView(ctx: Ctx, s: GameState): View {
   return {
     el: h('section', { class: 'panel panel-finale' },
       header('최종 사건 · 항복한 블랙아웃'),
-      h('div', { class: 'adult-row' }, sprite(`adult-${type}`, spriteURL(heroSprite(`adult-${type}`, s.settings.appearance)), 'adult-sprite', '어른이 된 하람'), sprite('villain', spriteURL('villain'), 'portrait', '블랙아웃')),
+      h('div', { class: 'adult-row' }, sprite(`hero-${type}`, spriteURL(heroSprite(`hero-${type}`, s.settings.appearance)), 'adult-sprite', '어른이 된 하람'), sprite('villain-kneel', spriteURL('villain-kneel'), 'kneel-sprite', '무릎 꿇은 블랙아웃')),
       tw.el, notice, choices, h('div', { class: 'actions' }, reveal)),
     destroy: () => tw.destroy(),
     focus: tw.done ? buttons[0] : reveal,

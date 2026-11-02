@@ -18,7 +18,7 @@ export function endingView(ctx: Ctx, s: GameState): View {
   const el = h('section', { class: 'panel ending', dataset: { testid: 'ending', ending: j.type } },
     h('p', { class: 'years-later' }, '엔딩'),
     h('div', { class: 'ending-hero' },
-      sprite(`adult-${j.type}`, spriteURL(heroSprite(`adult-${j.type}`, s.settings.appearance)), 'adult-sprite big', `어른이 된 하람 (${e.name})`),
+      sprite(`hero-${j.type}`, spriteURL(heroSprite(`hero-${j.type}`, s.settings.appearance)), 'adult-sprite big', `어른이 된 하람 (${e.name})`),
       h('div', null, h('h2', { class: 'panel-title ending-name', tabindex: '-1' }, e.name), h('p', null, e.base), accepted ? h('p', { class: 'persuasion' }, e.persuasionAccepted) : null),
     ),
     h('h3', null, '하람을 만든 가르침'),

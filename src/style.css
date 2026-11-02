@@ -255,8 +255,9 @@ img.sprite, img.icon, img.portrait, img.adult-sprite, img.title-sprite, img.titl
 .panel-finale { background: linear-gradient(180deg, var(--surface) 0%, var(--surface-2) 100%); }
 .years-later { font-size: 14px; letter-spacing: 0.3em; color: var(--ink-2); margin-bottom: 4px; }
 .adult-row { display: flex; align-items: flex-end; gap: 16px; margin-bottom: 12px; }
-.adult-sprite { width: 64px; height: 96px; }
-.adult-sprite.big { width: 96px; height: 144px; flex: none; }
+.adult-sprite { width: 64px; height: 104px; object-fit: contain; } /* 영웅 그림 32x52의 2배 */
+.kneel-sprite { width: 64px; height: 72px; object-fit: contain; image-rendering: pixelated; } /* 32x36의 2배 */
+.adult-sprite.big { width: 96px; height: 156px; flex: none; } /* 3배 */
 .ending-hero { display: flex; gap: 16px; align-items: flex-start; }
 .ending-name { font-size: 26px; margin-bottom: 8px; }
 .persuasion { background: var(--accent-soft); padding: 8px 10px; border-radius: 8px; }
