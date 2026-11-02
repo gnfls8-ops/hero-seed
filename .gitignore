@@ -1,7 +1,9 @@
-node_modules/
-dist/
-test-results/
-playwright-report/
 *.log
+art-src/raw/
+art-src/variants/
+dist/
 hero-seed-source.zip
 hero-seed.bundle
+node_modules/
+playwright-report/
+test-results/
