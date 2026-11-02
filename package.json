@@ -10,7 +10,8 @@
     "preview": "vite preview",
     "test": "vitest run",
     "test:e2e": "npm run build && playwright test",
-    "verify:maps": "vitest run tests/unit/maps.test.ts"
+    "verify:maps": "vitest run tests/unit/maps.test.ts",
+    "art:manifest": "node scripts/art-manifest.mjs"
   },
   "dependencies": {
     "phaser": "4.2.1"

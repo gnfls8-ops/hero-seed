@@ -1,6 +1,7 @@
 // 자체 제작 픽셀 스프라이트. 문자 하나가 픽셀 하나이며 고정 팔레트를 사용한다.
 // Phaser 텍스처와 DOM 초상(data URL) 모두 같은 정의에서 만든다.
 import type { Mood } from '../core/types';
+import { ART_BY_KEY } from '../data/art';
 
 export const PALETTE: Record<string, string> = {
   k: '#1d1b2c', // 윤곽
@@ -484,9 +485,45 @@ export function spriteCanvas(name: string, scale = 1): HTMLCanvasElement {
   return c;
 }
 
+// ───── 교체 아트 (PNG). 없으면 위의 코드 스프라이트를 쓴다.
+const overrides = new Map<string, { img: HTMLImageElement; src: string }>();
+
+export function setArtOverride(key: string, img: HTMLImageElement, src: string): void {
+  overrides.set(key, { img, src });
+}
+
+export function hasArtOverride(key: string): boolean {
+  return overrides.has(key);
+}
+
+/** 화면에 그려지는 크기 (아트 슬롯 크기, 슬롯이 없으면 원본 크기) */
+export function displaySize(name: string): { w: number; h: number } {
+  const slot = ART_BY_KEY[name];
+  if (slot) return { w: slot.w, h: slot.h };
+  const d = SPRITES[name];
+  if (!d) throw new Error(`unknown sprite ${name}`);
+  return { w: d.w, h: d.h };
+}
+
+/** Phaser 텍스처용: 표시 크기 그대로의 캔버스. 교체 PNG가 있으면 그것을, 없으면 코드 스프라이트를 정수배로 그린다. */
+export function textureCanvas(name: string): HTMLCanvasElement {
+  const { w, h } = displaySize(name);
+  const o = overrides.get(name);
+  if (!o) return spriteCanvas(name, Math.max(1, Math.round(w / SPRITES[name]!.w)));
+  const c = document.createElement('canvas');
+  c.width = w;
+  c.height = h;
+  const ctx = c.getContext('2d')!;
+  ctx.imageSmoothingEnabled = false;
+  ctx.drawImage(o.img, 0, 0, w, h);
+  return c;
+}
+
 const urlCache = new Map<string, string>();
-/** DOM 초상용 data URL (작은 원본을 CSS pixelated로 확대) */
+/** DOM 이미지용 주소 (작은 원본을 CSS pixelated로 확대). 교체 PNG가 있으면 그 파일. */
 export function spriteURL(name: string): string {
+  const o = overrides.get(name);
+  if (o) return o.src;
   let u = urlCache.get(name);
   if (!u) {
     u = spriteCanvas(name, 1).toDataURL('image/png');

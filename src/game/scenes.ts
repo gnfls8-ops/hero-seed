@@ -3,7 +3,7 @@ import Phaser from 'phaser';
 import type { GameState, MinigameSnapshot, Mood, Teaching } from '../core/types';
 import { MAP_BY_ID } from '../core/registry';
 import { dominantTeaching, classifyEnding } from '../core/ending';
-import { SPRITES, spriteCanvas, PALETTE } from './sprites';
+import { SPRITES, textureCanvas, PALETTE } from './sprites';
 import { DIR_VEC } from '../core/rescue';
 
 export interface Bridge {
@@ -22,8 +22,8 @@ const C = (k: string) => hex(PALETTE[k] ?? '#ff00ff');
 function ensureTextures(scene: Phaser.Scene) {
   if (scene.textures.exists('tex-ready')) return;
   for (const name of Object.keys(SPRITES)) {
-    const tile = ['floor', 'wall', 'debris', 'exit', 'doll', 'doll-red', 'doll-blue', 'citizen', 'citizen-b', 'evidence'].includes(name) || name.startsWith('mini-');
-    scene.textures.addCanvas(name, spriteCanvas(name, tile ? 2 : 1));
+    // 모든 텍스처는 화면 표시 크기로 만든다 (교체 PNG와 코드 스프라이트가 같은 크기)
+    scene.textures.addCanvas(name, textureCanvas(name));
   }
   const dot = document.createElement('canvas');
   dot.width = dot.height = 2;
@@ -95,7 +95,7 @@ export class RoomScene extends Phaser.Scene {
     g.fillStyle(C('n')).fillRect(110, 80, 16, 12);
     g.fillStyle(C('N')).fillRect(116, 76, 4, 6);
     this.deco = this.add.container(0, 0);
-    this.child = this.add.image(96, 104, `child-${s.mood}`).setOrigin(0.5, 1).setScale(2);
+    this.child = this.add.image(96, 104, `child-${s.mood}`).setOrigin(0.5, 1);
     this.float = this.add.rectangle(110, 70, 8, 2, C('g'));
     this.mood = s.mood;
     this.lean = dominantTeaching(s.eventHistory);
@@ -139,8 +139,8 @@ export class RoomScene extends Phaser.Scene {
     // 옥상
     g.fillStyle(C('k')).fillRect(0, 108, 192, 20);
     g.fillStyle(C('G')).fillRect(0, 106, 192, 2);
-    this.add.image(150, 108, 'villain').setOrigin(0.5, 1).setScale(1.5).setAlpha(0.95);
-    this.child = this.add.image(84, 108, `adult-${type}`).setOrigin(0.5, 1).setScale(2);
+    this.add.image(150, 108, 'villain').setOrigin(0.5, 1).setScale(0.75).setAlpha(0.95);
+    this.child = this.add.image(84, 108, `adult-${type}`).setOrigin(0.5, 1);
     this.float = this.add.rectangle(-10, -10, 1, 1, 0);
     this.deco = this.add.container(0, 0);
   }
@@ -157,7 +157,7 @@ export class RoomScene extends Phaser.Scene {
       this.mood = s.mood;
       this.child.setTexture(`child-${s.mood}`);
       // 표정 변화: 짧게 튀어 오르는 연출
-      this.tweens.add({ targets: this.child, scaleY: 2.25, scaleX: 1.8, duration: 110, yoyo: true, ease: 'Quad.easeOut' });
+      this.tweens.add({ targets: this.child, scaleY: 1.12, scaleX: 0.9, duration: 110, yoyo: true, ease: 'Quad.easeOut' });
     }
     const lean = dominantTeaching(s.eventHistory);
     if (lean !== this.lean) {
