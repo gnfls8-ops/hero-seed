@@ -3,7 +3,7 @@ import Phaser from 'phaser';
 import type { GameState, MinigameSnapshot, Mood, Teaching } from '../core/types';
 import { MAP_BY_ID } from '../core/registry';
 import { dominantTeaching, classifyEnding } from '../core/ending';
-import { SPRITES, textureCanvas, PALETTE, heroSprite } from './sprites';
+import { SPRITES, textureCanvas, PALETTE, heroSprite, hasArtOverride } from './sprites';
 import { DIR_VEC } from '../core/rescue';
 
 export interface Bridge {
@@ -24,6 +24,11 @@ function ensureTextures(scene: Phaser.Scene) {
   for (const name of Object.keys(SPRITES)) {
     // 모든 텍스처는 화면 표시 크기로 만든다 (교체 PNG와 코드 스프라이트가 같은 크기)
     scene.textures.addCanvas(name, textureCanvas(name));
+  }
+  // 기본 도트가 없는 장면 일러스트는 교체 PNG가 있을 때만 텍스처로 만든다
+  for (const t of ['white', 'dark', 'villain']) {
+    const key = `finale-bg-${t}`;
+    if (hasArtOverride(key)) scene.textures.addCanvas(key, textureCanvas(key));
   }
   const dot = document.createElement('canvas');
   dot.width = dot.height = 2;
@@ -50,6 +55,9 @@ export class RoomScene extends Phaser.Scene {
   private look: GameState['settings']['appearance'] = 'boy';
   private lean: Teaching | null = null;
   private adultMode = false;
+  private endingType: 'white' | 'dark' | 'villain' = 'white';
+  private heroBaseY = 124;
+  private fx: Array<{ o: Phaser.GameObjects.Image | Phaser.GameObjects.Rectangle; vx: number; vy: number; kind: 'mote' | 'rain' | 'ember' }> = [];
   private t = 0;
 
   constructor() {
@@ -127,25 +135,81 @@ export class RoomScene extends Phaser.Scene {
 
   private buildAdult(s: GameState) {
     const type = classifyEnding(s.traits).type;
-    const g = this.add.graphics();
-    const skyTop = type === 'white' ? '#6a8fd0' : type === 'dark' ? '#2a2440' : '#3a1622';
-    g.fillStyle(hex(skyTop)).fillRect(0, 0, 192, 128);
-    g.fillStyle(hex('#f6f2e6'));
-    for (let i = 0; i < 18; i++) g.fillRect((i * 37) % 192, (i * 23) % 60, 1, 1);
-    // 도시 실루엣
-    const bld = type === 'villain' ? C('R') : C('G');
-    g.fillStyle(bld);
-    [[0, 70, 26], [24, 56, 20], [46, 74, 30], [80, 50, 18], [100, 66, 28], [130, 58, 22], [154, 72, 40]].forEach(([x, y, w]) => g.fillRect(x!, y!, w!, 128 - y!));
-    g.fillStyle(type === 'villain' ? C('r') : C('y'));
-    for (let i = 0; i < 26; i++) g.fillRect(4 + ((i * 29) % 184), 76 + ((i * 13) % 30), 2, 2);
-    // 옥상
-    g.fillStyle(C('k')).fillRect(0, 108, 192, 20);
-    g.fillStyle(C('G')).fillRect(0, 106, 192, 2);
-    this.add.image(150, 108, 'villain').setOrigin(0.5, 1).setScale(0.75).setAlpha(0.95);
+    this.endingType = type;
+    const bgKey = `finale-bg-${type}`;
+    if (this.textures.exists(bgKey)) {
+      this.add.image(0, 0, bgKey).setOrigin(0);
+    } else {
+      // 교체 일러스트가 없을 때의 기본 배경: 하늘, 별, 도시 실루엣, 옥상
+      const g = this.add.graphics();
+      const skyTop = type === 'white' ? '#6a8fd0' : type === 'dark' ? '#2a2440' : '#3a1622';
+      g.fillStyle(hex(skyTop)).fillRect(0, 0, 192, 128);
+      g.fillStyle(hex('#f6f2e6'));
+      for (let i = 0; i < 18; i++) g.fillRect((i * 37) % 192, (i * 23) % 60, 1, 1);
+      g.fillStyle(type === 'villain' ? C('R') : C('G'));
+      [[0, 70, 26], [24, 56, 20], [46, 74, 30], [80, 50, 18], [100, 66, 28], [130, 58, 22], [154, 72, 40]].forEach(([x, y, w]) => g.fillRect(x!, y!, w!, 128 - y!));
+      g.fillStyle(type === 'villain' ? C('r') : C('y'));
+      for (let i = 0; i < 26; i++) g.fillRect(4 + ((i * 29) % 184), 76 + ((i * 13) % 30), 2, 2);
+      g.fillStyle(C('k')).fillRect(0, 108, 192, 20);
+      g.fillStyle(C('G')).fillRect(0, 106, 192, 2);
+    }
+    this.buildAtmosphere(type);
+    this.add.image(150, 124, 'villain-kneel').setOrigin(0.5, 1).setAlpha(0.97);
     this.look = s.settings.appearance;
-    this.child = this.add.image(84, 108, heroSprite(`adult-${type}`, this.look)).setOrigin(0.5, 1);
+    this.child = this.add.image(76, 124, heroSprite(`hero-${type}`, this.look)).setOrigin(0.5, 1);
+    this.heroBaseY = 124;
     this.float = this.add.rectangle(-10, -10, 1, 1, 0);
     this.deco = this.add.container(0, 0);
+    // 성장 연출: '몇 년 뒤' 화면에 처음 들어올 때 아이가 빛에 감싸여 어른 영웅으로 바뀐다
+    if (s.phase === 'finaleIntro') this.playGrowth(s);
+  }
+
+  /** 엔딩별 분위기: 화이트는 빛줄기와 떠오르는 빛, 다크는 비와 네온 깜빡임, 빌런은 탐조등과 불티 */
+  private buildAtmosphere(type: 'white' | 'dark' | 'villain') {
+    this.fx = [];
+    if (type === 'white') {
+      const rays = this.add.graphics().setBlendMode(Phaser.BlendModes.ADD).setAlpha(0.18);
+      for (let i = 0; i < 5; i++) {
+        const a = -1.9 + i * 0.32;
+        rays.fillStyle(C('y'), 1).fillTriangle(96, 58, 96 + Math.cos(a) * 220 - 10, 58 + Math.sin(a) * 220, 96 + Math.cos(a) * 220 + 10, 58 + Math.sin(a) * 220);
+      }
+      this.tweens.add({ targets: rays, alpha: 0.08, duration: 2600, yoyo: true, repeat: -1, ease: 'Sine.easeInOut' });
+      for (let i = 0; i < 14; i++) this.fx.push({ o: this.add.image((i * 53) % 192, 60 + ((i * 29) % 60), 'dot').setTint(C('y')).setAlpha(0.7), vx: 0, vy: -6 - (i % 4) * 2, kind: 'mote' });
+    } else if (type === 'dark') {
+      for (let i = 0; i < 70; i++) {
+        const r = this.add.rectangle((i * 37) % 200, (i * 53) % 128, 1, 4, C('c')).setAlpha(0.45);
+        this.fx.push({ o: r, vx: -18, vy: 140 + (i % 5) * 12, kind: 'rain' });
+      }
+      const flick = this.add.rectangle(0, 0, 192, 128, C('p')).setOrigin(0).setBlendMode(Phaser.BlendModes.ADD).setAlpha(0);
+      this.time.addEvent({ delay: 2300, loop: true, callback: () => this.tweens.add({ targets: flick, alpha: { from: 0.12, to: 0 }, duration: 180 }) });
+    } else {
+      const beam = this.add.graphics().setBlendMode(Phaser.BlendModes.ADD).setAlpha(0.22);
+      beam.fillStyle(C('r'), 1).fillTriangle(0, 0, 210, -14, 210, 14);
+      beam.setPosition(120, 18);
+      this.tweens.add({ targets: beam, rotation: { from: 2.2, to: 3.6 }, duration: 4200, yoyo: true, repeat: -1, ease: 'Sine.easeInOut' });
+      for (let i = 0; i < 16; i++) this.fx.push({ o: this.add.image((i * 41) % 192, 70 + ((i * 17) % 58), 'dot').setTint(i % 2 ? C('o') : C('r')).setAlpha(0.8), vx: 4, vy: -10 - (i % 3) * 4, kind: 'ember' });
+    }
+  }
+
+  private playGrowth(s: GameState) {
+    const hero = this.child;
+    hero.setAlpha(0);
+    const kid = this.add.image(76, 124, heroSprite('child-neutral', s.settings.appearance)).setOrigin(0.5, 1);
+    const glow = this.add.image(76, 108, 'dot').setTint(C('w')).setScale(1).setAlpha(0).setBlendMode(Phaser.BlendModes.ADD);
+    const flash = this.add.rectangle(0, 0, 192, 128, C('w')).setOrigin(0).setAlpha(0);
+    this.tweens.chain({
+      tweens: [
+        { targets: glow, alpha: 0.9, scale: 14, duration: 700, ease: 'Quad.easeIn' },
+        { targets: flash, alpha: 1, duration: 160, onComplete: () => { kid.destroy(); hero.setAlpha(1).setScale(0.7); } },
+        { targets: [flash, glow], alpha: 0, duration: 520, ease: 'Quad.easeOut' },
+        { targets: hero, scale: 1, duration: 420, ease: 'Back.easeOut' },
+      ],
+    });
+    for (let i = 0; i < 12; i++) {
+      const a = (i / 12) * Math.PI * 2;
+      const d = this.add.image(76, 92, 'dot').setTint(C('y')).setAlpha(0);
+      this.tweens.add({ targets: d, delay: 860, alpha: { from: 1, to: 0 }, x: 76 + Math.cos(a) * 34, y: 92 + Math.sin(a) * 34, duration: 600, onComplete: () => d.destroy() });
+    }
   }
 
   private sync(s: GameState) {
@@ -178,7 +242,17 @@ export class RoomScene extends Phaser.Scene {
     if (!this.child) return;
     // 대기 애니메이션: 숨쉬기 + 염동력으로 뜬 숟가락
     const bob = Math.round(Math.sin(this.t * 2.2) * 1);
-    this.child.y = (this.adultMode ? 108 : 104) + bob;
+    this.child.y = (this.adultMode ? this.heroBaseY : 104) + bob;
+    if (this.adultMode) {
+      const dt = delta / 1000;
+      for (const p of this.fx) {
+        p.o.x += p.vx * dt;
+        p.o.y += p.vy * dt;
+        if (p.kind === 'rain' && p.o.y > 130) { p.o.y = -4; p.o.x = (p.o.x + 97) % 200; }
+        if (p.kind !== 'rain' && p.o.y < 20) { p.o.y = 124; p.o.x = (p.o.x + 61) % 192; }
+        if (p.kind !== 'rain') p.o.x += Math.sin(this.t * 2 + p.o.y) * 0.1;
+      }
+    }
     if (!this.adultMode) {
       this.float.x = 112 + Math.round(Math.cos(this.t * 1.3) * 6);
       this.float.y = 62 + Math.round(Math.sin(this.t * 1.7) * 4);

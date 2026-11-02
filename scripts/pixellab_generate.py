@@ -38,7 +38,7 @@ SHEETS = SRC / "sheets"
 PICKS = SRC / "picks.json"
 STYLE = SRC / "style.png"
 API = "https://api.pixellab.ai/v2"
-SEED = {"child": 1101, "mini": 1201, "tile": 1301, "target": 1401, "portrait": 1501, "adult": 1601, "icon": 1701}
+SEED = {"hero": 1801, "scene": 1901, "child": 1101, "mini": 1201, "tile": 1301, "target": 1401, "portrait": 1501, "adult": 1601, "icon": 1701}
 
 
 def load_slots():
@@ -97,7 +97,7 @@ def submit(slot):
             "size": {"width": ri.width, "height": ri.height},
             "usage_description": "Same character: keep the face, hair, skin tone and outfit colors identical",
         }]
-    if STYLE.exists():
+    if STYLE.exists() and not slot.get("noStyle"):
         st = Image.open(STYLE).convert("RGBA")
         body["style_image"] = {"image": {"type": "base64", "base64": b64png(st)}, "size": {"width": st.width, "height": st.height}}
         body["style_options"] = {"color_palette": False, "outline": True, "detail": True, "shading": True}
@@ -153,6 +153,34 @@ def load_picks():
     return json.loads(PICKS.read_text()) if PICKS.exists() else {}
 
 
+def align_to_ref(key):
+    """캐릭터 슬롯(표정·방향)을 참고 이미지와 발 위치·가로 중심이 같도록 옮긴다 (교체 시 흔들림 방지)."""
+    slots = load_slots()
+    slot = slots.get(key)
+    if not slot or slot["group"] not in ("child", "mini") or not slot.get("ref"):
+        return
+    base_path = OUT / f"{slot['ref']}.png"
+    if key.startswith("mini-"):
+        base_path = OUT / ("mini-down-girl.png" if key.endswith("-girl") else "mini-down.png")
+        if key.startswith("mini-down"):
+            return
+    if not base_path.exists():
+        return
+    base = Image.open(base_path).convert("RGBA").getbbox()
+    im = Image.open(OUT / f"{key}.png").convert("RGBA")
+    bb = im.getbbox()
+    if not base or not bb:
+        return
+    dx = round((base[0] + base[2]) / 2 - (bb[0] + bb[2]) / 2)
+    dy = base[3] - bb[3]
+    dx = max(-bb[0], min(dx, im.width - bb[2]))
+    dy = max(-bb[1], min(dy, im.height - bb[3]))
+    if dx or dy:
+        out = Image.new("RGBA", im.size, (0, 0, 0, 0))
+        out.alpha_composite(im, (dx, dy))
+        out.save(OUT / f"{key}.png")
+
+
 def apply_pick(key, idx):
     if isinstance(idx, str) and idx.startswith("mirror:"):
         # 좌우 반전 슬롯 (예: 왼쪽 = 오른쪽 반전)
@@ -160,11 +188,46 @@ def apply_pick(key, idx):
 
         ImageOps.mirror(Image.open(OUT / f"{idx[7:]}.png")).save(OUT / f"{key}.png")
         return
+    _copy_pick(key, idx)
+    align_to_ref(key)
+
+
+def _copy_pick(key, idx):
     src = VAR / key / f"{idx:02d}.png"
     if not src.exists():
         raise SystemExit(f"{key}: 변형 {idx}번이 없습니다 ({src})")
     OUT.mkdir(parents=True, exist_ok=True)
-    Image.open(src).save(OUT / f"{key}.png")
+    strip_edge_specks(Image.open(src).convert("RGBA")).save(OUT / f"{key}.png")
+
+
+def strip_edge_specks(im, max_px=12):
+    """생성 격자 경계에서 넘어온 작은 조각(가장자리에 붙은 8px 이하 덩어리)을 지운다."""
+    from collections import deque
+
+    w, h = im.size
+    px = im.load()
+    seen = set()
+    for y in range(h):
+        for x in range(w):
+            if px[x, y][3] == 0 or (x, y) in seen:
+                continue
+            q = deque([(x, y)])
+            seen.add((x, y))
+            comp = []
+            while q:
+                cx, cy = q.popleft()
+                comp.append((cx, cy))
+                for dx in (-1, 0, 1):
+                    for dy in (-1, 0, 1):
+                        nx, ny = cx + dx, cy + dy
+                        if 0 <= nx < w and 0 <= ny < h and (nx, ny) not in seen and px[nx, ny][3] > 0:
+                            seen.add((nx, ny))
+                            q.append((nx, ny))
+            at_edge = any(cx <= 1 or cy <= 0 or cx >= w - 2 or cy >= h - 1 for cx, cy in comp)
+            if len(comp) <= max_px and at_edge:
+                for cx, cy in comp:
+                    px[cx, cy] = (0, 0, 0, 0)
+    return im
 
 
 def cmd_gen(slots, keys, parallel):

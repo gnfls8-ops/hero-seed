@@ -479,6 +479,13 @@ SPRITES['adult-villain-girl'] = paint(SPRITES['adult-villain']!, LONG_HAIR);
 // 다크 버전은 후드에 머리가 가려지므로 가슴께로 흘러내린 머리카락으로 구분
 SPRITES['adult-dark-girl'] = paint(SPRITES['adult-dark']!, [[4, 8, 'h'], [4, 9, 'h'], [4, 10, 'h'], [11, 8, 'h'], [11, 9, 'h'], [11, 10, 'h']], 'k.');
 
+// ───── 마지막 영웅 장면용 큰 그림: 교체 PNG가 없으면 기존 어른·블랙아웃 도트를 정수배로 키워 쓴다
+for (const t of ['white', 'dark', 'villain']) {
+  SPRITES[`hero-${t}`] = SPRITES[`adult-${t}`]!;
+  SPRITES[`hero-${t}-girl`] = SPRITES[`adult-${t}-girl`]!;
+}
+SPRITES['villain-kneel'] = SPRITES['villain']!;
+
 /** 하람 스프라이트 이름에 모습(남자아이/여자아이)을 반영 */
 export function heroSprite(base: string, appearance: Appearance | undefined): string {
   return appearance === 'girl' ? `${base}-girl` : base;
@@ -531,9 +538,16 @@ export function displaySize(name: string): { w: number; h: number } {
 }
 
 /** Phaser 텍스처용: 표시 크기 그대로의 캔버스. 교체 PNG가 있으면 그것을, 없으면 코드 스프라이트를 정수배로 그린다. */
+/** 교체 PNG가 없을 때 먼저 쓸 다른 슬롯 (예: 큰 영웅 그림이 없으면 작은 어른 그림을 2배로) */
+const FALLBACK_OF: Record<string, string> = { 'villain-kneel': 'villain' };
+for (const t of ['white', 'dark', 'villain']) {
+  FALLBACK_OF[`hero-${t}`] = `adult-${t}`;
+  FALLBACK_OF[`hero-${t}-girl`] = `adult-${t}-girl`;
+}
+
 export function textureCanvas(name: string): HTMLCanvasElement {
   const { w, h } = displaySize(name);
-  const o = overrides.get(name);
+  const o = overrides.get(name) ?? (FALLBACK_OF[name] ? overrides.get(FALLBACK_OF[name]!) : undefined);
   if (!o) return spriteCanvas(name, Math.max(1, Math.round(w / SPRITES[name]!.w)));
   const c = document.createElement('canvas');
   c.width = w;

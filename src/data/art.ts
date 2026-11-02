@@ -5,7 +5,7 @@
 // w·h는 화면에 그려지는 크기(게임 월드 픽셀)이며, 생성 이미지도 이 크기로 맞춘다.
 // prompt는 이미지 생성 도구(PixelLab 등)에 넣을 설명이다.
 
-export type ArtGroup = 'child' | 'mini' | 'tile' | 'target' | 'portrait' | 'adult' | 'icon';
+export type ArtGroup = 'child' | 'mini' | 'tile' | 'target' | 'portrait' | 'adult' | 'icon' | 'hero' | 'scene';
 
 export interface ArtSlot {
   key: string;
@@ -17,6 +17,8 @@ export interface ArtSlot {
   prompt: string;
   /** 같은 캐릭터로 보이도록 참고할 슬롯 (이미 고른 PNG) */
   ref?: string;
+  /** 그림체 기준(style.png)을 쓰지 않음 (큰 배경 일러스트 등) */
+  noStyle?: boolean;
 }
 
 const STYLE = 'clean pixel art, 16-bit era, limited bright palette, crisp 1px dark outline, no anti-aliasing';
@@ -33,7 +35,7 @@ const child = (kid: Kid, mood: string, face: string): ArtSlot => ({
   w: 24,
   h: 32,
   transparent: true,
-  prompt: `${STYLE}. Full body front view of ${KIDS[kid].desc}, standing, ${face}.`,
+  prompt: `${STYLE}. Full body front view facing the viewer, small character with a few pixels of empty space above the head, of ${KIDS[kid].desc}, standing, ${face}.`,
   ref: mood === 'neutral' ? undefined : `child-neutral${KIDS[kid].suffix}`,
 });
 
@@ -50,7 +52,7 @@ const mini = (kid: Kid, dir: string, view: string): ArtSlot => ({
 const kidSlots = (kid: Kid): ArtSlot[] => [
   child(kid, 'neutral', 'calm neutral face'),
   child(kid, 'happy', 'big smile, eyes closed happily'),
-  child(kid, 'thinking', 'looking up to the side, thoughtful'),
+  child(kid, 'thinking', 'thoughtful, eyes looking up, one finger on the chin'),
   child(kid, 'sad', 'downcast eyes, small frown'),
   child(kid, 'fierce', 'serious, brave and determined expression'),
   mini(kid, 'down', 'facing the viewer'),
@@ -76,6 +78,48 @@ const adult = (kid: Kid, type: keyof typeof ADULT): ArtSlot => ({
 
 const tile = (key: string, desc: string, transparent = false): ArtSlot => ({ key, group: 'tile', w: 24, h: 24, transparent, prompt: `${STYLE}. Top-down 24x24 game tile: ${desc}.` });
 const target = (key: string, desc: string): ArtSlot => ({ key, group: 'target', w: 24, h: 24, transparent: true, prompt: `${STYLE}. Top-down 24x24 sprite: ${desc}.` });
+
+const SCENE = 'detailed cinematic pixel art illustration, 16-bit era, rich atmospheric lighting, no characters, no people, no text';
+const scene = (type: keyof typeof ADULT, desc: string): ArtSlot => ({
+  key: `finale-bg-${type}`,
+  group: 'scene',
+  w: 192,
+  h: 128,
+  transparent: false,
+  noStyle: true,
+  prompt: `${SCENE}. Wide view from a city rooftop: ${desc}. The bottom quarter is an empty flat rooftop ledge where characters will stand.`,
+});
+const hero = (kid: Kid, type: keyof typeof ADULT): ArtSlot => ({
+  key: `hero-${type}${KIDS[kid].suffix}`,
+  group: 'hero',
+  w: 64,
+  h: 96,
+  transparent: true,
+  prompt: `${STYLE}. Large full body heroic portrait, front three-quarter view, standing tall in a dramatic pose, of adult Haram (grown-up ${kid === 'girl' ? 'woman with brown hair tied back' : 'man with brown hair'}) as ${ADULT[type]}.`,
+  ref: `adult-${type}${KIDS[kid].suffix}`,
+});
+function finaleSlots(): ArtSlot[] {
+  return [
+    scene('white', 'a sunrise over the city skyline, golden dawn light breaking through clouds, warm hopeful rays, glittering windows'),
+    scene('dark', 'the city skyline at night in heavy rain, purple and teal neon signs, wet rooftop with puddles reflecting the lights, moody fog'),
+    scene('villain', 'a city under a blood-red sky, a giant broadcast tower with red searchlights sweeping the clouds, darkened buildings, ominous'),
+    hero('boy', 'white'),
+    hero('boy', 'dark'),
+    hero('boy', 'villain'),
+    hero('girl', 'white'),
+    hero('girl', 'dark'),
+    hero('girl', 'villain'),
+    {
+      key: 'villain-kneel',
+      group: 'hero',
+      w: 48,
+      h: 48,
+      transparent: true,
+      prompt: `${STYLE}. Full body of the supervillain Blackout kneeling on one knee in surrender with hands raised, dark grey armored suit, full-face helmet with glowing yellow eyes and a lightning emblem.`,
+      ref: 'villain',
+    },
+  ];
+}
 
 export const ART_SLOTS: ArtSlot[] = [
   ...kidSlots('boy'),
@@ -103,6 +147,8 @@ export const ART_SLOTS: ArtSlot[] = [
   { key: 'icon-training', group: 'icon', w: 20, h: 20, transparent: true, prompt: `${STYLE}. 20x20 UI icon: yellow burst star representing psychic power training.` },
   { key: 'icon-volunteer', group: 'icon', w: 20, h: 20, transparent: true, prompt: `${STYLE}. 20x20 UI icon: red heart with a small white highlight.` },
   { key: 'icon-family', group: 'icon', w: 20, h: 20, transparent: true, prompt: `${STYLE}. 20x20 UI icon: cozy small house with lit windows.` },
+  // ───── 마지막 영웅 장면 (몇 년 뒤 ~ 엔딩): 엔딩별 배경 + 크게 그린 영웅 + 항복한 블랙아웃
+  ...finaleSlots(),
 ];
 
 export const ART_BY_KEY: Record<string, ArtSlot> = Object.fromEntries(ART_SLOTS.map((s) => [s.key, s]));

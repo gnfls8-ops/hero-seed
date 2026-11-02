@@ -4,7 +4,7 @@ import { SPRITES } from '../../src/game/sprites';
 
 describe('교체 아트 슬롯', () => {
   it('모든 슬롯은 기본 스프라이트가 있고, 크기는 기본 스프라이트의 정수배', () => {
-    for (const s of ART_SLOTS) {
+    for (const s of ART_SLOTS.filter((x) => x.group !== 'scene')) {
       const d = SPRITES[s.key];
       expect(d, s.key).toBeDefined();
       expect(s.w % d!.w, `${s.key} 너비`).toBe(0);
@@ -18,7 +18,7 @@ describe('교체 아트 슬롯', () => {
   });
   it('남자아이·여자아이 모습의 하람 스프라이트가 짝을 이룬다', () => {
     const boy = Object.keys(SPRITES).filter((k) => /^(child|mini|adult)-/.test(k) && !k.endsWith('-girl'));
-    expect(boy.length).toBe(12);
+    expect(boy.length).toBe(12); // 장면용 hero-* 별칭은 adult-*와 같은 그림
     for (const k of boy) {
       const g = SPRITES[`${k}-girl`];
       expect(g, `${k}-girl`).toBeDefined();
