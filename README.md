@@ -6,6 +6,7 @@
 - 한 회차 6턴(턴당 한 달), 목표 10~15분
 - 도트 방(육성) + 짧은 구조 미니게임(2·4·6턴) + 몇 년 뒤 성인 장면과 엔딩 3종
 - 설치·로그인 없이 정적 파일로 실행, PC(키보드·마우스)와 모바일(터치) 공용
+- 플레이: https://gnfls8-ops.github.io/host-playtest/hero-seed/ (`gnfls8-ops/host-playtest` 저장소 `main`의 `hero-seed/` 폴더에 빌드 결과를 올려 서비스)
 
 ## 실행
 
