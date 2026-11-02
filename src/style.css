@@ -401,3 +401,8 @@ img.sprite, img.icon, img.portrait, img.adult-sprite, img.title-sprite, img.titl
 .json-area { width: 100%; font: 14px/1.4 ui-monospace, monospace; background: var(--surface-2); color: var(--ink); border: 1px solid var(--line); border-radius: 8px; padding: 8px; }
 .paste-box summary { cursor: pointer; min-height: 44px; display: flex; align-items: center; font-size: 14px; }
 .paste-box { display: grid; gap: 6px; }
+.look-picker { margin-top: 8px; display: grid; gap: 6px; }
+.look-row { display: flex; gap: 10px; flex-wrap: wrap; }
+.look-btn { display: flex; align-items: center; gap: 8px; padding: 6px 14px 6px 6px; }
+.look-btn[aria-pressed='true'] { background: var(--accent-soft); outline: 3px solid var(--accent); outline-offset: 0; }
+.look-sprite { width: 40px; height: 53px; object-fit: contain; }

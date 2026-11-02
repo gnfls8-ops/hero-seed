@@ -86,6 +86,17 @@ def submit(slot):
         "no_background": bool(slot["transparent"]),
         "seed": SEED.get(slot["group"], 1000),
     }
+    ref = slot.get("ref")
+    if ref:
+        rp = OUT / f"{ref}.png"
+        if not rp.exists():
+            raise RuntimeError(f"{slot['key']}: 참고 슬롯 {ref}을(를) 먼저 생성·선택하세요")
+        ri = Image.open(rp).convert("RGBA")
+        body["reference_images"] = [{
+            "image": {"type": "base64", "base64": b64png(ri)},
+            "size": {"width": ri.width, "height": ri.height},
+            "usage_description": "Same character: keep the face, hair, skin tone and outfit colors identical",
+        }]
     if STYLE.exists():
         st = Image.open(STYLE).convert("RGBA")
         body["style_image"] = {"image": {"type": "base64", "base64": b64png(st)}, "size": {"width": st.width, "height": st.height}}

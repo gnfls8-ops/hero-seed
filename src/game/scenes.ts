@@ -3,7 +3,7 @@ import Phaser from 'phaser';
 import type { GameState, MinigameSnapshot, Mood, Teaching } from '../core/types';
 import { MAP_BY_ID } from '../core/registry';
 import { dominantTeaching, classifyEnding } from '../core/ending';
-import { SPRITES, textureCanvas, PALETTE } from './sprites';
+import { SPRITES, textureCanvas, PALETTE, heroSprite } from './sprites';
 import { DIR_VEC } from '../core/rescue';
 
 export interface Bridge {
@@ -47,6 +47,7 @@ export class RoomScene extends Phaser.Scene {
   private deco!: Phaser.GameObjects.Container;
   private sky!: Phaser.GameObjects.Rectangle;
   private mood: Mood = 'neutral';
+  private look: GameState['settings']['appearance'] = 'boy';
   private lean: Teaching | null = null;
   private adultMode = false;
   private t = 0;
@@ -95,7 +96,8 @@ export class RoomScene extends Phaser.Scene {
     g.fillStyle(C('n')).fillRect(110, 80, 16, 12);
     g.fillStyle(C('N')).fillRect(116, 76, 4, 6);
     this.deco = this.add.container(0, 0);
-    this.child = this.add.image(96, 104, `child-${s.mood}`).setOrigin(0.5, 1);
+    this.look = s.settings.appearance;
+    this.child = this.add.image(96, 104, heroSprite(`child-${s.mood}`, this.look)).setOrigin(0.5, 1);
     this.float = this.add.rectangle(110, 70, 8, 2, C('g'));
     this.mood = s.mood;
     this.lean = dominantTeaching(s.eventHistory);
@@ -140,22 +142,27 @@ export class RoomScene extends Phaser.Scene {
     g.fillStyle(C('k')).fillRect(0, 108, 192, 20);
     g.fillStyle(C('G')).fillRect(0, 106, 192, 2);
     this.add.image(150, 108, 'villain').setOrigin(0.5, 1).setScale(0.75).setAlpha(0.95);
-    this.child = this.add.image(84, 108, `adult-${type}`).setOrigin(0.5, 1);
+    this.look = s.settings.appearance;
+    this.child = this.add.image(84, 108, heroSprite(`adult-${type}`, this.look)).setOrigin(0.5, 1);
     this.float = this.add.rectangle(-10, -10, 1, 1, 0);
     this.deco = this.add.container(0, 0);
   }
 
   private sync(s: GameState) {
     const adult = isAdultPhase(s);
-    if (adult !== this.adultMode) {
+    if (adult !== this.adultMode || (adult && s.settings.appearance !== this.look)) {
       this.scene.restart();
       return;
     }
     if (adult) return;
     this.sky.fillColor = hex(SKY_BY_TURN[s.turn - 1] ?? SKY_BY_TURN[0]!);
+    if (s.settings.appearance !== this.look) {
+      this.look = s.settings.appearance;
+      this.child.setTexture(heroSprite(`child-${s.mood}`, this.look));
+    }
     if (s.mood !== this.mood) {
       this.mood = s.mood;
-      this.child.setTexture(`child-${s.mood}`);
+      this.child.setTexture(heroSprite(`child-${s.mood}`, this.look));
       // 표정 변화: 짧게 튀어 오르는 연출
       this.tweens.add({ targets: this.child, scaleY: 1.12, scaleX: 0.9, duration: 110, yoyo: true, ease: 'Quad.easeOut' });
     }
@@ -250,7 +257,7 @@ export class RescueScene extends Phaser.Scene {
       this.tweens.add({ targets: img, y: img.y - 1, duration: 600 + (t.x % 3) * 90, yoyo: true, repeat: -1 });
     }
     this.arrow = this.add.graphics();
-    this.player = this.add.image(s.x * TILE + 12, s.y * TILE + 12, `mini-${s.facing}`);
+    this.player = this.add.image(s.x * TILE + 12, s.y * TILE + 12, heroSprite(`mini-${s.facing}`, bridge!.get().settings.appearance));
     this.lastSeq = s.lastEvent?.seq ?? 0;
     this.drawArrow(s.facing);
   }
@@ -270,7 +277,7 @@ export class RescueScene extends Phaser.Scene {
 
   private apply(s: MinigameSnapshot) {
     const ev = s.lastEvent;
-    this.player.setTexture(`mini-${s.facing}`);
+    this.player.setTexture(heroSprite(`mini-${s.facing}`, bridge!.get().settings.appearance));
     const px = s.x * TILE + 12;
     const py = s.y * TILE + 12;
     const fresh = ev && ev.seq !== this.lastSeq;

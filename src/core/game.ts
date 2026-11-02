@@ -20,7 +20,7 @@ import { dominantTeaching } from './ending';
 
 export const SCHEMA_VERSION = 1;
 
-export const DEFAULT_SETTINGS: Settings = { muted: false, textSpeed: 'normal', touchControls: 'auto' };
+export const DEFAULT_SETTINGS: Settings = { muted: false, textSpeed: 'normal', touchControls: 'auto', appearance: 'boy' };
 
 export type Action =
   | { type: 'newGame'; runId: string; settings?: Settings }

@@ -46,10 +46,15 @@ export const MOODS: readonly Mood[] = ['neutral', 'happy', 'thinking', 'sad', 'f
 export type TextSpeed = 'normal' | 'fast' | 'instant';
 export type TouchControls = 'auto' | 'on' | 'off';
 
+export type Appearance = 'boy' | 'girl';
+export const APPEARANCES: readonly Appearance[] = ['boy', 'girl'];
+
 export interface Settings {
   muted: boolean;
   textSpeed: TextSpeed;
   touchControls: TouchControls;
+  /** 하람의 모습. 이야기 문장은 성별 중립이며 그림만 바뀐다. */
+  appearance: Appearance;
 }
 
 // ---------- 조건식 (eval 없이 허용된 연산자만) ----------

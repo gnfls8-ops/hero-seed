@@ -13,7 +13,7 @@ import { canAddToSchedule, scheduleDelta } from '../../core/rules';
 import { costsFor } from '../../core/rescue';
 import { classifyEnding, persuasionAccepted } from '../../core/ending';
 import { currentMonth, isMinigameTurn } from '../../core/game';
-import { spriteURL } from '../../game/sprites';
+import { spriteURL, heroSprite } from '../../game/sprites';
 import { STAT_LABEL, signed, statDiff, traitDescriptions } from '../describe';
 
 // ───────── 공통 도우미
@@ -44,10 +44,10 @@ function story(ctx: Ctx, paragraphs: string[]): Typewriter {
   return new Typewriter(paragraphs, ctx.store.get().settings.textSpeed);
 }
 
-function portraitRow(cast: string[]) {
+function portraitRow(cast: string[], look: GameState['settings']['appearance']) {
   const names: Record<string, string> = { child: NAMES.child, friend: NAMES.friend, teacher: NAMES.teacher, villain: NAMES.villain };
   const sprites: Record<string, string> = { child: 'child-neutral', friend: 'friend', teacher: 'teacher', villain: 'villain' };
-  return h('ul', { class: 'cast' }, cast.map((c) => h('li', { class: 'cast-item' }, sprite(sprites[c]!, spriteURL(sprites[c]!), 'portrait'), h('span', null, names[c] ?? c))));
+  return h('ul', { class: 'cast' }, cast.map((c) => h('li', { class: 'cast-item' }, sprite(sprites[c]!, spriteURL(c === 'child' ? heroSprite(sprites[c]!, look) : sprites[c]!), c === 'child' ? 'portrait cast-child' : 'portrait'), h('span', null, names[c] ?? c))));
 }
 
 // ───────── 단계별 뷰
@@ -55,7 +55,17 @@ function portraitRow(cast: string[]) {
 function introView(ctx: Ctx, s: GameState): View {
   const tw = story(ctx, INTRO);
   const next = nextButton(ctx, 'intro', s.turn, tw, '첫 달 시작 ▶');
-  return { el: h('section', { class: 'panel' }, header('하람의 첫 염동력'), tw.el, h('div', { class: 'actions' }, next)), destroy: () => tw.destroy(), focus: next };
+  // 하람의 모습 고르기 (이야기 문장은 같고 그림만 달라진다. 설정에서도 바꿀 수 있다)
+  const looks = [['boy', '남자아이'], ['girl', '여자아이']] as const;
+  const buttons = looks.map(([v, label]) =>
+    btn([sprite('child-happy', spriteURL(heroSprite('child-happy', v)), 'portrait look-sprite'), h('span', null, label)], () => {
+      ctx.audio.play('select');
+      ctx.store.dispatch({ type: 'setSettings', settings: { appearance: v } });
+    }, { class: 'btn look-btn', 'aria-pressed': String(s.settings.appearance === v), dataset: { testid: `look-${v}` } }),
+  );
+  const picker = h('div', { class: 'look-picker', role: 'group', 'aria-label': '하람의 모습' }, h('p', { class: 'muted' }, '하람의 모습을 골라 주세요. 이야기는 같고, 나중에 설정에서 바꿀 수 있습니다.'), h('div', { class: 'look-row' }, buttons));
+  const update = (st: GameState) => buttons.forEach((b, i) => b.setAttribute('aria-pressed', String(st.settings.appearance === looks[i]![0])));
+  return { el: h('section', { class: 'panel' }, header('하람의 첫 염동력'), tw.el, picker, h('div', { class: 'actions' }, next)), update, destroy: () => tw.destroy(), focus: next };
 }
 
 function statusView(ctx: Ctx, s: GameState): View {
@@ -268,7 +278,7 @@ function eventView(ctx: Ctx, s: GameState): View {
     if (document.activeElement === reveal || document.activeElement === document.body) buttons[0]?.focus();
   });
   return {
-    el: h('section', { class: 'panel' }, header(`${s.turn}월차 사건 · ${ev.title}`), portraitRow(ev.cast), tw.el, h('p', { class: 'prompt' }, '하람에게 뭐라고 말해 줄까?'), choices, actions),
+    el: h('section', { class: 'panel' }, header(`${s.turn}월차 사건 · ${ev.title}`), portraitRow(ev.cast, s.settings.appearance), tw.el, h('p', { class: 'prompt' }, '하람에게 뭐라고 말해 줄까?'), choices, actions),
     destroy: () => tw.destroy(),
     focus: tw.done ? buttons[0] : reveal,
   };
@@ -359,7 +369,7 @@ function finaleView(ctx: Ctx, s: GameState): View {
   return {
     el: h('section', { class: 'panel panel-finale' },
       header('최종 사건 · 항복한 블랙아웃'),
-      h('div', { class: 'adult-row' }, sprite(`adult-${type}`, spriteURL(`adult-${type}`), 'adult-sprite', '어른이 된 하람'), sprite('villain', spriteURL('villain'), 'portrait', '블랙아웃')),
+      h('div', { class: 'adult-row' }, sprite(`adult-${type}`, spriteURL(heroSprite(`adult-${type}`, s.settings.appearance)), 'adult-sprite', '어른이 된 하람'), sprite('villain', spriteURL('villain'), 'portrait', '블랙아웃')),
       tw.el, notice, choices, h('div', { class: 'actions' }, reveal)),
     destroy: () => tw.destroy(),
     focus: tw.done ? buttons[0] : reveal,

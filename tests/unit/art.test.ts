@@ -16,6 +16,16 @@ describe('교체 아트 슬롯', () => {
     const keys = new Set(ART_SLOTS.map((s) => s.key));
     for (const name of Object.keys(SPRITES)) expect(keys.has(name), name).toBe(true);
   });
+  it('남자아이·여자아이 모습의 하람 스프라이트가 짝을 이룬다', () => {
+    const boy = Object.keys(SPRITES).filter((k) => /^(child|mini|adult)-/.test(k) && !k.endsWith('-girl'));
+    expect(boy.length).toBe(12);
+    for (const k of boy) {
+      const g = SPRITES[`${k}-girl`];
+      expect(g, `${k}-girl`).toBeDefined();
+      expect([g!.w, g!.h]).toEqual([SPRITES[k]!.w, SPRITES[k]!.h]);
+      expect(g!.rows.join('')).not.toBe(SPRITES[k]!.rows.join(''));
+    }
+  });
   it('타일·미니게임 스프라이트는 24px 타일 크기', () => {
     for (const s of ART_SLOTS.filter((x) => ['tile', 'target', 'mini'].includes(x.group))) expect([s.w, s.h]).toEqual([24, 24]);
   });

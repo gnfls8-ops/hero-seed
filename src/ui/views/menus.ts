@@ -146,6 +146,7 @@ export function settingsBody(get: () => Settings, set: (p: Partial<Settings>) =>
   mute.addEventListener('change', () => set({ muted: mute.checked }));
   return h('div', { class: 'settings' },
     h('label', { class: 'check', for: 'set-muted' }, mute, '효과음 끄기 (음소거)'),
+    radio('appearance', '하람의 모습', [['boy', '남자아이'], ['girl', '여자아이']]),
     radio('textSpeed', '연출 속도', [['normal', '보통'], ['fast', '빠르게'], ['instant', '즉시 표시']]),
     radio('touchControls', '터치 조작 버튼 표시', [['auto', '자동 (터치 기기에서 표시)'], ['on', '항상 표시'], ['off', '숨기기']]),
   );

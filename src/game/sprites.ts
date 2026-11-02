@@ -1,6 +1,6 @@
 // 자체 제작 픽셀 스프라이트. 문자 하나가 픽셀 하나이며 고정 팔레트를 사용한다.
 // Phaser 텍스처와 DOM 초상(data URL) 모두 같은 정의에서 만든다.
-import type { Mood } from '../core/types';
+import type { Appearance, Mood } from '../core/types';
 import { ART_BY_KEY } from '../data/art';
 
 export const PALETTE: Record<string, string> = {
@@ -458,6 +458,31 @@ export const SPRITES: Record<string, SpriteDef> = {
 };
 
 for (const m of ['neutral', 'happy', 'thinking', 'sad', 'fierce'] as Mood[]) SPRITES[`child-${m}`] = childSprite(m);
+
+// ───── 여자아이 모습: 기본 스프라이트에 양갈래 머리·리본(아이), 긴 머리(어른)를 덧그린다
+type Spot = [x: number, y: number, c: string];
+function paint(d: SpriteDef, spots: Spot[], onlyOn = '.'): SpriteDef {
+  const rows = d.rows.map((r) => [...r]);
+  for (const [x, y, c] of spots) if (rows[y]?.[x] !== undefined && onlyOn.includes(rows[y]![x]!)) rows[y]![x] = c;
+  return def(rows.map((r) => r.join('')));
+}
+const PIGTAILS: Spot[] = [[1, 2, 'r'], [10, 2, 'r'], [1, 3, 'h'], [1, 4, 'h'], [1, 5, 'h'], [10, 3, 'h'], [10, 4, 'h'], [10, 5, 'h']];
+const MINI_TAILS: Spot[] = [[1, 1, 'r'], [10, 1, 'r'], [1, 2, 'h'], [1, 3, 'h'], [10, 2, 'h'], [10, 3, 'h']];
+const LONG_HAIR: Spot[] = [2, 3, 4, 5, 6, 7, 8].flatMap((y) => [[3, y, 'h'], [12, y, 'h']] as Spot[]);
+for (const m of ['neutral', 'happy', 'thinking', 'sad', 'fierce'] as Mood[]) SPRITES[`child-${m}-girl`] = paint(SPRITES[`child-${m}`]!, PIGTAILS);
+SPRITES['mini-down-girl'] = paint(SPRITES['mini-down']!, MINI_TAILS);
+SPRITES['mini-up-girl'] = paint(SPRITES['mini-up']!, MINI_TAILS);
+SPRITES['mini-right-girl'] = paint(SPRITES['mini-right']!, [[1, 1, 'r'], [1, 2, 'h'], [1, 3, 'h'], [0, 3, 'h']]);
+SPRITES['mini-left-girl'] = def(mirror(SPRITES['mini-right-girl']!.rows));
+SPRITES['adult-white-girl'] = paint(SPRITES['adult-white']!, LONG_HAIR);
+SPRITES['adult-villain-girl'] = paint(SPRITES['adult-villain']!, LONG_HAIR);
+// 다크 버전은 후드에 머리가 가려지므로 가슴께로 흘러내린 머리카락으로 구분
+SPRITES['adult-dark-girl'] = paint(SPRITES['adult-dark']!, [[4, 8, 'h'], [4, 9, 'h'], [4, 10, 'h'], [11, 8, 'h'], [11, 9, 'h'], [11, 10, 'h']], 'k.');
+
+/** 하람 스프라이트 이름에 모습(남자아이/여자아이)을 반영 */
+export function heroSprite(base: string, appearance: Appearance | undefined): string {
+  return appearance === 'girl' ? `${base}-girl` : base;
+}
 
 export function drawSprite(ctx: CanvasRenderingContext2D, s: SpriteDef, ox = 0, oy = 0, scale = 1): void {
   for (let y = 0; y < s.h; y++) {

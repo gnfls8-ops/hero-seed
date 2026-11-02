@@ -16,7 +16,7 @@ import type {
   Stats,
   Traits,
 } from './types';
-import { ACTIVITY_IDS, DIRS, FINALE_CHOICES, MOODS, PHASES } from './types';
+import { ACTIVITY_IDS, APPEARANCES, DIRS, FINALE_CHOICES, MOODS, PHASES } from './types';
 
 export const SAVE_KEYS = {
   main: 'heroSeed.save.v1',
@@ -86,6 +86,8 @@ function settings(v: unknown): Settings {
     muted: bool(o.muted, 'settings.muted'),
     textSpeed: oneOf(o.textSpeed, ['normal', 'fast', 'instant'] as const, 'settings.textSpeed'),
     touchControls: oneOf(o.touchControls, ['auto', 'on', 'off'] as const, 'settings.touchControls'),
+    // 모습 선택 이전 저장 파일에는 없으므로 기본값(남자아이)
+    appearance: o.appearance === undefined ? 'boy' : oneOf(o.appearance, APPEARANCES, 'settings.appearance'),
   };
 }
 const T = BALANCE.totalTurns;

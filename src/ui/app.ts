@@ -7,7 +7,7 @@ import { createInitialState, DEFAULT_SETTINGS } from '../core/game';
 import { isFinished } from '../core/rescue';
 import { PixelView } from '../game/pixel';
 import { setBridge } from '../game/scenes';
-import { spriteURL } from '../game/sprites';
+import { spriteURL, heroSprite } from '../game/sprites';
 import { AudioFx } from './audio';
 import { Modals } from './modal';
 import { h, btn, clear, sprite } from './dom';
@@ -117,7 +117,7 @@ export class App {
     const newBtn = btn('새 게임', () => void this.newGame(), { class: `btn btn-big ${this.hasSave ? '' : 'btn-primary'}`, dataset: { testid: 'btn-new-game' } });
     this.main.append(
       h('div', { class: 'title-card' },
-        h('div', { class: 'title-art' }, sprite('child-happy', spriteURL('child-happy'), 'title-sprite', ''), sprite('icon-training', spriteURL('icon-training'), 'title-spark', '')),
+        h('div', { class: 'title-art' }, sprite('child-happy', spriteURL(heroSprite('child-happy', s.settings.appearance)), 'title-sprite', ''), sprite('icon-training', spriteURL('icon-training'), 'title-spark', '')),
         h('h1', { class: 'game-title' }, GAME_TITLE),
         h('p', { class: 'game-sub' }, GAME_SUBTITLE),
         h('div', { class: 'title-buttons' },
@@ -182,6 +182,13 @@ export class App {
 
   private onState(s: GameState, prev: GameState) {
     if (s.settings !== prev.settings) this.applySettings(s.settings);
+    if (s.settings.appearance !== prev.settings.appearance) {
+      // 모습이 바뀌면 화면에 있는 하람 그림을 바로 바꾼다
+      const set = (sel: string, base: string) => this.root.querySelectorAll<HTMLImageElement>(sel).forEach((img) => (img.src = spriteURL(heroSprite(base, s.settings.appearance))));
+      set('.title-sprite', 'child-happy');
+      set('.status-portrait', 'child-neutral');
+      set('img[data-sprite="child-neutral"].cast-child', 'child-neutral');
+    }
     if (this.screen === 'game') this.render(s, prev);
   }
 
@@ -244,7 +251,7 @@ export class App {
     const traits = h('ul', { class: 'trait-desc', 'aria-label': '하람의 성향', dataset: { testid: 'trait-desc' } });
     const monthEl = h('span', { class: 'status-month' });
     const status = h('section', { class: 'card status-card', 'aria-label': `${NAMES.child}의 상태` },
-      h('div', { class: 'status-head' }, sprite('child-neutral', spriteURL('child-neutral'), 'portrait small'), h('div', null, h('h2', { class: 'status-name' }, `${NAMES.child} · 여덟 살`), monthEl)),
+      h('div', { class: 'status-head' }, sprite('child-neutral', spriteURL(heroSprite('child-neutral', this.store.get().settings.appearance)), 'portrait small status-portrait'), h('div', null, h('h2', { class: 'status-name' }, `${NAMES.child} · 여덟 살`), monthEl)),
       h('ul', { class: 'stat-list' }, statRows),
       traits,
     );

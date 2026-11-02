@@ -113,6 +113,16 @@ describe('가져오기 검증', () => {
     expect(() => parseImport(wrap(s))).toThrow(ValidationError);
   });
 
+  it('모습(appearance)이 없는 예전 저장은 남자아이로, 잘못된 값은 거절', () => {
+    const s = JSON.parse(JSON.stringify(good()));
+    delete s.settings.appearance;
+    expect(validateState(s).settings.appearance).toBe('boy');
+    s.settings.appearance = 'robot';
+    expect(() => validateState(s)).toThrow(ValidationError);
+    s.settings.appearance = 'girl';
+    expect(validateState(s).settings.appearance).toBe('girl');
+  });
+
   it('알 수 없는 추가 필드는 버린다', () => {
     const s = JSON.parse(JSON.stringify(good()));
     s.evil = '<b>x</b>';
