@@ -1,5 +1,18 @@
 {
   "child-neutral": 17,
+  "child-neutral-girl": 24,
+  "citizen": 3,
+  "citizen-b": 36,
   "debris": 7,
-  "friend": 24
+  "doll": 3,
+  "doll-blue": 2,
+  "doll-red": 20,
+  "evidence": 13,
+  "friend": 24,
+  "icon-family": 3,
+  "icon-school": 18,
+  "icon-training": 0,
+  "icon-volunteer": 0,
+  "teacher": 0,
+  "villain": 0
 }
