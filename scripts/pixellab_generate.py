@@ -154,6 +154,12 @@ def load_picks():
 
 
 def apply_pick(key, idx):
+    if isinstance(idx, str) and idx.startswith("mirror:"):
+        # 좌우 반전 슬롯 (예: 왼쪽 = 오른쪽 반전)
+        from PIL import ImageOps
+
+        ImageOps.mirror(Image.open(OUT / f"{idx[7:]}.png")).save(OUT / f"{key}.png")
+        return
     src = VAR / key / f"{idx:02d}.png"
     if not src.exists():
         raise SystemExit(f"{key}: 변형 {idx}번이 없습니다 ({src})")
@@ -204,8 +210,9 @@ def main():
             k, _, v = pair.partition("=")
             if k not in slots:
                 raise SystemExit(f"알 수 없는 슬롯 {k}")
-            apply_pick(k, int(v))
-            picks[k] = int(v)
+            val = v if v.startswith("mirror:") else int(v)
+            apply_pick(k, val)
+            picks[k] = val
         SRC.mkdir(exist_ok=True)
         PICKS.write_text(json.dumps(dict(sorted(picks.items())), indent=2) + "\n")
         print("선택 반영 완료. 다음: npm run art:manifest")

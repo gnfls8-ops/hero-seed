@@ -52,7 +52,7 @@ const kidSlots = (kid: Kid): ArtSlot[] => [
   child(kid, 'happy', 'big smile, eyes closed happily'),
   child(kid, 'thinking', 'looking up to the side, thoughtful'),
   child(kid, 'sad', 'downcast eyes, small frown'),
-  child(kid, 'fierce', 'furrowed brows, determined clenched mouth'),
+  child(kid, 'fierce', 'serious, brave and determined expression'),
   mini(kid, 'down', 'facing the viewer'),
   mini(kid, 'up', 'seen from behind'),
   mini(kid, 'left', 'facing left, side view'),
