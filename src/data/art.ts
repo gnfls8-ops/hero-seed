@@ -89,13 +89,16 @@ const scene = (type: keyof typeof ADULT, desc: string): ArtSlot => ({
   noStyle: true,
   prompt: `${SCENE}. Wide view from a city rooftop: ${desc}. The bottom quarter is an empty flat rooftop ledge where characters will stand.`,
 });
+// 마지막 장면 인물: 배경 일러스트와 어울리도록 현실적인 7~8등신 비율, 배경 건물·난간에 맞는 크기(키 약 48px)
+const REAL = 'realistic proportions pixel art, adult human anatomy about 7.5 heads tall, small head, long legs, not chibi, not super-deformed, detailed muted realistic colors, soft shading, crisp 1px outline';
 const hero = (kid: Kid, type: keyof typeof ADULT): ArtSlot => ({
   key: `hero-${type}${KIDS[kid].suffix}`,
   group: 'hero',
-  w: 64,
-  h: 96,
+  w: 32,
+  h: 52,
   transparent: true,
-  prompt: `${STYLE}. Large full body heroic portrait, front three-quarter view, standing tall in a dramatic pose, of adult Haram (grown-up ${kid === 'girl' ? 'woman with brown hair tied back' : 'man with brown hair'}) as ${ADULT[type]}.`,
+  noStyle: true,
+  prompt: `${REAL}. Full body, standing on the ground, front three-quarter view, calm confident stance, of an adult ${kid === 'girl' ? 'woman with long brown hair tied back' : 'man with short brown hair'} as ${ADULT[type]}.`,
   ref: `adult-${type}${KIDS[kid].suffix}`,
 });
 function finaleSlots(): ArtSlot[] {
@@ -112,10 +115,11 @@ function finaleSlots(): ArtSlot[] {
     {
       key: 'villain-kneel',
       group: 'hero',
-      w: 48,
-      h: 48,
+      w: 32,
+      h: 36,
       transparent: true,
-      prompt: `${STYLE}. Full body of the supervillain Blackout kneeling on one knee in surrender with hands raised, dark grey armored suit, full-face helmet with glowing yellow eyes and a lightning emblem.`,
+      noStyle: true,
+      prompt: `${REAL}. Full body side three-quarter view of an adult supervillain called Blackout kneeling on one knee in surrender with both hands behind the head, sleek dark grey armored suit, full-face helmet with glowing yellow eyes and a small lightning emblem.`,
       ref: 'villain',
     },
   ];

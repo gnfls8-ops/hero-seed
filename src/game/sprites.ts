@@ -547,14 +547,23 @@ for (const t of ['white', 'dark', 'villain']) {
 
 export function textureCanvas(name: string): HTMLCanvasElement {
   const { w, h } = displaySize(name);
-  const o = overrides.get(name) ?? (FALLBACK_OF[name] ? overrides.get(FALLBACK_OF[name]!) : undefined);
-  if (!o) return spriteCanvas(name, Math.max(1, Math.round(w / SPRITES[name]!.w)));
   const c = document.createElement('canvas');
   c.width = w;
   c.height = h;
   const ctx = c.getContext('2d')!;
   ctx.imageSmoothingEnabled = false;
-  ctx.drawImage(o.img, 0, 0, w, h);
+  const own = overrides.get(name);
+  if (own) {
+    ctx.drawImage(own.img, 0, 0, w, h);
+    return c;
+  }
+  // 대체 그림: 가장 큰 정수배로 키워 바닥·가운데에 맞춘다 (늘이거나 찌그러뜨리지 않음)
+  const alt = FALLBACK_OF[name] ? overrides.get(FALLBACK_OF[name]!) : undefined;
+  const src: CanvasImageSource = alt ? alt.img : spriteCanvas(name, 1);
+  const sw = alt ? alt.img.naturalWidth : SPRITES[name]!.w;
+  const sh = alt ? alt.img.naturalHeight : SPRITES[name]!.h;
+  const k = Math.max(1, Math.floor(Math.min(w / sw, h / sh)));
+  ctx.drawImage(src, Math.floor((w - sw * k) / 2), h - sh * k, sw * k, sh * k);
   return c;
 }
 

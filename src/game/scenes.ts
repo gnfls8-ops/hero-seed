@@ -154,10 +154,10 @@ export class RoomScene extends Phaser.Scene {
       g.fillStyle(C('G')).fillRect(0, 106, 192, 2);
     }
     this.buildAtmosphere(type);
-    this.add.image(150, 124, 'villain-kneel').setOrigin(0.5, 1).setAlpha(0.97);
+    this.add.image(142, 122, 'villain-kneel').setOrigin(0.5, 1).setAlpha(0.97);
     this.look = s.settings.appearance;
-    this.child = this.add.image(76, 124, heroSprite(`hero-${type}`, this.look)).setOrigin(0.5, 1);
-    this.heroBaseY = 124;
+    this.child = this.add.image(84, 122, heroSprite(`hero-${type}`, this.look)).setOrigin(0.5, 1);
+    this.heroBaseY = 122;
     this.float = this.add.rectangle(-10, -10, 1, 1, 0);
     this.deco = this.add.container(0, 0);
     // 성장 연출: '몇 년 뒤' 화면에 처음 들어올 때 아이가 빛에 감싸여 어른 영웅으로 바뀐다
@@ -194,9 +194,9 @@ export class RoomScene extends Phaser.Scene {
   private playGrowth(s: GameState) {
     const hero = this.child;
     hero.setAlpha(0);
-    const kid = this.add.image(76, 124, heroSprite('child-neutral', s.settings.appearance)).setOrigin(0.5, 1);
+    const kid = this.add.image(84, 122, heroSprite('child-neutral', s.settings.appearance)).setOrigin(0.5, 1);
     // 겹친 원으로 만든 둥근 후광 (가운데가 더 밝다)
-    const glow = this.add.container(76, 106).setAlpha(0).setScale(0.2);
+    const glow = this.add.container(84, 104).setAlpha(0).setScale(0.2);
     [[40, 0.25], [28, 0.4], [16, 0.7]].forEach(([r, a]) => glow.add(this.add.circle(0, 0, r!, C('y'), a!).setBlendMode(Phaser.BlendModes.ADD)));
     const flash = this.add.rectangle(0, 0, 192, 128, C('w')).setOrigin(0).setAlpha(0);
     this.tweens.chain({
@@ -209,8 +209,8 @@ export class RoomScene extends Phaser.Scene {
     });
     for (let i = 0; i < 12; i++) {
       const a = (i / 12) * Math.PI * 2;
-      const d = this.add.image(76, 92, 'dot').setTint(C('y')).setAlpha(0);
-      this.tweens.add({ targets: d, delay: 860, alpha: { from: 1, to: 0 }, x: 76 + Math.cos(a) * 34, y: 92 + Math.sin(a) * 34, duration: 600, onComplete: () => d.destroy() });
+      const d = this.add.image(84, 100, 'dot').setTint(C('y')).setAlpha(0);
+      this.tweens.add({ targets: d, delay: 860, alpha: { from: 1, to: 0 }, x: 84 + Math.cos(a) * 28, y: 100 + Math.sin(a) * 28, duration: 600, onComplete: () => d.destroy() });
     }
   }
 

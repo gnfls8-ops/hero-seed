@@ -4,7 +4,8 @@ import { SPRITES } from '../../src/game/sprites';
 
 describe('교체 아트 슬롯', () => {
   it('모든 슬롯은 기본 스프라이트가 있고, 크기는 기본 스프라이트의 정수배', () => {
-    for (const s of ART_SLOTS.filter((x) => x.group !== 'scene')) {
+    // 장면·마지막 장면 인물은 기본 도트를 바닥 기준으로 넣으므로 정수배 조건에서 제외
+    for (const s of ART_SLOTS.filter((x) => x.group !== 'scene' && x.group !== 'hero')) {
       const d = SPRITES[s.key];
       expect(d, s.key).toBeDefined();
       expect(s.w % d!.w, `${s.key} 너비`).toBe(0);
