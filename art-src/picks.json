@@ -27,7 +27,7 @@
   "hero-dark-girl": 1,
   "hero-villain": 3,
   "hero-villain-girl": 2,
-  "hero-white": 8,
+  "hero-white": 12,
   "hero-white-girl": 4,
   "icon-family": 3,
   "icon-school": 18,
@@ -43,5 +43,5 @@
   "mini-up-girl": 35,
   "teacher": 0,
   "villain": 0,
-  "villain-kneel": 14
+  "villain-kneel": 0
 }
