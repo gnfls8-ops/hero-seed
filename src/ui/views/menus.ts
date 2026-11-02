@@ -56,18 +56,12 @@ export function exportSave(ctx: Ctx) {
 export function importFlow(ctx: Ctx, onDone?: () => void): HTMLElement {
   const status = h('p', { class: 'import-status', role: 'status', dataset: { testid: 'import-status' } });
   const input = h('input', { type: 'file', accept: '.json,application/json', class: 'file-input', dataset: { testid: 'import-file' }, 'aria-label': '저장 파일 선택' });
-  input.addEventListener('change', async () => {
-    const file = input.files?.[0];
-    input.value = '';
-    if (!file) return;
-    if (file.size > MAX_IMPORT_BYTES) {
-      status.textContent = '가져오기 실패: 파일이 1MB를 넘습니다. 현재 진행은 그대로입니다.';
-      return;
-    }
+  const apply = async (read: () => Promise<{ text: string; size: number }>) => {
     let state: GameState;
     try {
-      const text = await file.text();
-      state = parseImport(text, file.size);
+      const { text, size } = await read();
+      if (size > MAX_IMPORT_BYTES) throw new ValidationError('파일이 1MB를 넘습니다');
+      state = parseImport(text, size);
     } catch (e) {
       const msg = e instanceof ValidationError ? e.message : '파일을 읽을 수 없습니다';
       status.textContent = `가져오기 실패: ${msg}. 현재 진행은 그대로입니다.`;
@@ -87,16 +81,50 @@ export function importFlow(ctx: Ctx, onDone?: () => void): HTMLElement {
     ctx.store.replace(state);
     ctx.toast('저장 파일을 가져왔습니다.');
     onDone?.();
+  };
+  input.addEventListener('change', () => {
+    const file = input.files?.[0];
+    input.value = '';
+    if (!file) return;
+    void apply(async () => ({ text: file.size > MAX_IMPORT_BYTES ? '' : await file.text(), size: file.size }));
   });
   const pick = btn('저장 파일 가져오기', () => input.click(), { class: 'btn', dataset: { testid: 'btn-import' } });
-  return h('div', { class: 'import-box' }, pick, input, status);
+  // 파일 선택이 막힌 환경을 위한 대체 경로: 복사해 둔 JSON 텍스트 붙여넣기
+  const area = h('textarea', { id: 'import-text', class: 'json-area', rows: '4', 'aria-label': '저장 JSON 붙여넣기', placeholder: '복사해 둔 저장 JSON을 붙여넣으세요', dataset: { testid: 'import-text' } });
+  const pasteBtn = btn('붙여넣은 내용 가져오기', () => {
+    const text = area.value;
+    void apply(async () => ({ text, size: new Blob([text]).size }));
+  }, { class: 'btn btn-small', dataset: { testid: 'btn-import-text' } });
+  const paste = h('details', { class: 'paste-box' }, h('summary', null, '텍스트로 가져오기'), area, pasteBtn);
+  return h('div', { class: 'import-box' }, pick, input, paste, status);
+}
+
+/** 다운로드가 막힌 환경을 위한 대체 경로: JSON 텍스트 복사 */
+function copyExport(ctx: Ctx, out: HTMLTextAreaElement) {
+  const text = buildExport(ctx.store.get());
+  out.value = text;
+  out.hidden = false;
+  const fallback = () => {
+    out.focus();
+    out.select();
+    ctx.toast('클립보드 복사가 막혀 있습니다. 표시된 텍스트를 직접 복사해 주세요.');
+  };
+  try {
+    navigator.clipboard.writeText(text).then(() => ctx.toast('저장 JSON을 복사했습니다.'), fallback);
+  } catch {
+    fallback();
+  }
 }
 
 export function saveBody(ctx: Ctx, close: () => void): HTMLElement {
   const ok = ctx.saver.available;
+  const out = h('textarea', { id: 'export-text', class: 'json-area', rows: '4', readonly: true, hidden: true, 'aria-label': '저장 JSON', dataset: { testid: 'export-text' } });
+  const copyBtn = btn('JSON 텍스트로 복사', () => copyExport(ctx, out), { class: 'btn', dataset: { testid: 'btn-copy-export' } });
   return h('div', { class: 'save-body' },
     h('p', { class: ok ? 'ok-line' : 'warn-line', dataset: { testid: 'save-status' } }, ok ? '자동 저장: 이 브라우저에 저장 중' : UI.storageUnavailable),
     btn('저장 파일 내보내기', () => exportSave(ctx), { class: 'btn btn-primary', dataset: { testid: 'btn-export' } }),
+    copyBtn,
+    out,
     h('p', { class: 'muted' }, UI.exportHint),
     importFlow(ctx, close),
   );

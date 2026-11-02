@@ -398,3 +398,6 @@ img.sprite, img.icon, img.portrait, img.adult-sprite, img.title-sprite, img.titl
 .mg-guide-btn, .top-actions .btn { white-space: nowrap; flex: none; }
 .mode-mg .top-actions { flex-wrap: nowrap; }
 @media (max-width: 959px) { .mode-mg .dev-chip { display: none; } }
+.json-area { width: 100%; font: 14px/1.4 ui-monospace, monospace; background: var(--surface-2); color: var(--ink); border: 1px solid var(--line); border-radius: 8px; padding: 8px; }
+.paste-box summary { cursor: pointer; min-height: 44px; display: flex; align-items: center; font-size: 14px; }
+.paste-box { display: grid; gap: 6px; }

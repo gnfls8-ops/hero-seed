@@ -97,6 +97,29 @@ test.describe('저장·복원', () => {
     await ctx2.close();
   });
 
+  test('다운로드가 막힌 환경: JSON 텍스트 복사 → 다른 컨텍스트에서 붙여넣어 가져오기', async ({ page, browser }) => {
+    await presetSettings(page);
+    await page.goto('./');
+    await tid(page, 'btn-new-game').click();
+    await next(page, 'mouse');
+    await next(page, 'mouse');
+    const original = await state(page);
+    await tid(page, 'btn-save').click();
+    await tid(page, 'btn-copy-export').click();
+    const text = await tid(page, 'export-text').inputValue();
+    expect(JSON.parse(text).format).toBe('hero-seed-save');
+    const ctx2 = await browser.newContext({ baseURL: test.info().project.use.baseURL });
+    const p2 = await ctx2.newPage();
+    await p2.goto('./');
+    await p2.locator('.paste-box summary').click();
+    await tid(p2, 'import-text').fill(text);
+    await tid(p2, 'btn-import-text').click();
+    await tid(p2, 'confirm-import-ok').click();
+    await waitPhase(p2, 'schedule', 1);
+    expect((await state(p2)).runId).toBe(original.runId);
+    await ctx2.close();
+  });
+
   test('잘못된 파일 가져오기는 거절하고 현재 진행을 유지', async ({ page }) => {
     await presetSettings(page);
     await page.goto('./');
