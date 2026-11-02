@@ -5,7 +5,7 @@
   "adult-villain-girl": 5,
   "adult-white": 0,
   "adult-white-girl": 0,
-  "child-fierce": 1,
+  "child-fierce": 9,
   "child-fierce-girl": 40,
   "child-happy": 0,
   "child-happy-girl": 39,
@@ -13,7 +13,7 @@
   "child-neutral-girl": 24,
   "child-sad": 1,
   "child-sad-girl": 58,
-  "child-thinking": 9,
+  "child-thinking": 58,
   "child-thinking-girl": 0,
   "citizen": 3,
   "citizen-b": 36,
@@ -24,7 +24,11 @@
   "evidence": 13,
   "friend": 24,
   "hero-dark": 3,
+  "hero-dark-girl": 1,
+  "hero-villain": 3,
+  "hero-villain-girl": 2,
   "hero-white": 8,
+  "hero-white-girl": 4,
   "icon-family": 3,
   "icon-school": 18,
   "icon-training": 0,
@@ -38,5 +42,6 @@
   "mini-up": 36,
   "mini-up-girl": 35,
   "teacher": 0,
-  "villain": 0
+  "villain": 0,
+  "villain-kneel": 14
 }

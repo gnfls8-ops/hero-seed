@@ -195,11 +195,13 @@ export class RoomScene extends Phaser.Scene {
     const hero = this.child;
     hero.setAlpha(0);
     const kid = this.add.image(76, 124, heroSprite('child-neutral', s.settings.appearance)).setOrigin(0.5, 1);
-    const glow = this.add.image(76, 108, 'dot').setTint(C('w')).setScale(1).setAlpha(0).setBlendMode(Phaser.BlendModes.ADD);
+    // 겹친 원으로 만든 둥근 후광 (가운데가 더 밝다)
+    const glow = this.add.container(76, 106).setAlpha(0).setScale(0.2);
+    [[40, 0.25], [28, 0.4], [16, 0.7]].forEach(([r, a]) => glow.add(this.add.circle(0, 0, r!, C('y'), a!).setBlendMode(Phaser.BlendModes.ADD)));
     const flash = this.add.rectangle(0, 0, 192, 128, C('w')).setOrigin(0).setAlpha(0);
     this.tweens.chain({
       tweens: [
-        { targets: glow, alpha: 0.9, scale: 14, duration: 700, ease: 'Quad.easeIn' },
+        { targets: glow, alpha: 1, scale: 1.2, duration: 700, ease: 'Quad.easeIn' },
         { targets: flash, alpha: 1, duration: 160, onComplete: () => { kid.destroy(); hero.setAlpha(1).setScale(0.7); } },
         { targets: [flash, glow], alpha: 0, duration: 520, ease: 'Quad.easeOut' },
         { targets: hero, scale: 1, duration: 420, ease: 'Back.easeOut' },
